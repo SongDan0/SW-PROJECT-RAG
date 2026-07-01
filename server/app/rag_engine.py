@@ -337,6 +337,7 @@ def build_prompt(
 """
 #""".strip()
     return f"""
+
 너는 사용자의 자산 관리를 돕는 [스마트 가계부 분석가]이다. 아래 지침에 따라 답변해라.
 
 ### [데이터 활용 가이드]
@@ -408,15 +409,15 @@ def retrieve_relevant_docs_custom(
         return passed[:max_k]
 
     # 요약본
-    relevant_summaries = filter_docs(summaries, threshold=0.8, min_k=1, max_k=3)
+    relevant_summaries = filter_docs(summaries, threshold=0.6, min_k=1, max_k=3)
     # 예산안
-    relevant_budgets = filter_docs(budgets, threshold=0.8, min_k=2, max_k=3)
+    relevant_budgets = filter_docs(budgets, threshold=0.6, min_k=2, max_k=3)
     # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
-    relevant_expenses = filter_docs(expenses, threshold=0.7, min_k=1, max_k=30)
+    relevant_expenses = filter_docs(expenses, threshold=0.6, min_k=1, max_k=30)
     # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
-    relevant_incomes = filter_docs(incomes, threshold=0.7, min_k=1, max_k=30)
+    relevant_incomes = filter_docs(incomes, threshold=0.6, min_k=1, max_k=30)
     # 대화 내역: 문맥 파악용으로 최대 3개
-    relevant_histories = filter_docs(chat_histories, threshold=0.7, min_k=0, max_k=3)
+    relevant_histories = filter_docs(chat_histories, threshold=0.6, min_k=0, max_k=3)
 
     return relevant_summaries, relevant_budgets, relevant_expenses, relevant_incomes, relevant_histories 
 
@@ -466,9 +467,9 @@ def retrieve_relevant_docs_vector(
         return passed[:max_k]
 
     # 요약본
-    relevant_summaries = filter_docs(summaries, threshold=0.8, min_k=1, max_k=3)
+    relevant_summaries = filter_docs(summaries, threshold=0.6, min_k=1, max_k=3)
     # 예산안
-    relevant_budgets = filter_docs(budgets, threshold=0.8, min_k=2, max_k=3)
+    relevant_budgets = filter_docs(budgets, threshold=0.6, min_k=2, max_k=3)
 
     return relevant_summaries, relevant_budgets
 
@@ -648,7 +649,7 @@ def vector_search_user_collection(
             query_vector=Vector(query_embedding),
             distance_measure=DistanceMeasure.COSINE,
             limit=limit,
-            distance_threshold=0.3
+            distance_threshold=0.4
         )
     )
 
@@ -799,6 +800,7 @@ def answer_question_all(uid: str, question: str) -> Dict[str, Any]:
     }
 
 def answer_question(uid: str, question: str) -> Dict[str, Any]:
+    load_monthly_summaries(uid)
     print("______________________________________________________________________________")
     print("추출 없이 모든 데이터 사용")
     answer = answer_question_all(uid, question)

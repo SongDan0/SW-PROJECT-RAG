@@ -769,7 +769,7 @@ def answer_question_all(uid: str, question: str) -> Dict[str, Any]:
     histories = load_chat_history(uid)
 
     retrieval_elapsed = time.time() - start
-    print(f"데이터 개수 개수: {len(expenses) + len(summaries) + len(histories)} + len(budgets) ")
+    print(f"데이터 개수 개수: {len(expenses) + len(summaries) + len(histories)} + {len(budgets)} ")
     print(f"데이터 로드 및 추출: {retrieval_elapsed}")
 
     # 프롬프트 생성

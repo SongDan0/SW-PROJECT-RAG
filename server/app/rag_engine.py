@@ -159,7 +159,7 @@ def process_expense_change(uid: str, data: Union[ExpenseIn, IncomeIn], mode: str
     updated_summary = update_summary(summary, data, mode)
     doc_ref.set(updated_summary.dict())
 
-def transform_query(question: str) -> str:
+def transform_query1(question: str) -> str:
     now = datetime.now()
     current_date = now.strftime("%Y-%m-%d")
     
@@ -180,6 +180,42 @@ def transform_query(question: str) -> str:
     transformed = call_gemini(prompt)
     delay = time.time() - start
     #print(f"2.5 Flash 모델로 질문 전처리: {delay}")
+    """
+    start = time.time()
+    transformed = call_gemini(prompt, flag=True)
+    delay = time.time() - start
+    print(f"2.5 Flash Lite 모델로 질문 전처리: {delay}")
+    """
+
+    return transformed if transformed else question
+
+def transform_query(question: str) -> str:
+    now = datetime.now()
+    current_date = now.strftime("%Y-%m-%d")
+    
+    prompt = f"""
+현재 날짜: {current_date}
+
+[지시사항]
+1. 사용자의 질문에서 날짜 관련 표현(지난달, 이번달, 3월 등)을 찾아 YYYY-MM 형식의 절대 날짜로 변환하세요.
+2. 변환된 정보를 포함하여 질문을 재구성하세요.
+3. 아래 JSON 형식으로만 응답하세요:
+{{
+    "transformed_question": "재구성된 질문",
+    "date": "YYYY-MM" (날짜 표현이 없으면 null)
+}}
+4. 다른 설명 없이 JSON만 반환하세요.
+
+사용자의 질문: "{question}"
+"""
+    ##########
+
+    start = time.time()
+    transformed = call_gemini(prompt)
+    delay = time.time() - start
+    #print(f"2.5 Flash 모델로 질문 전처리: {delay}")
+    print(f"{transformed['transformed_question']}")
+    print(f"{transformed['date']}")
     """
     start = time.time()
     transformed = call_gemini(prompt, flag=True)
@@ -372,9 +408,6 @@ def retrieve_relevant_docs_custom(
     사용자 질문과 가장 관련성이 높은 상위 k개의 문서를 반환
     """
 
-    # 사용자 질문 임베딩
-    query_embedding = call_embed_api(question)
-
     def filter_docs(
             docs: List[Dict[str, Any]], 
             threshold: float, 
@@ -408,18 +441,26 @@ def retrieve_relevant_docs_custom(
         # 최대 개수(max_k) 제한
         return passed[:max_k]
 
+    # 사용자 질문 임베딩
+    if(question['transformed_question']):
+        query_embedding = call_embed_api(question['date'])
+        # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
+        expenses = filter_docs(expenses, threshold=0.72, min_k=0, max_k=999999)
+        # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
+        incomes = filter_docs(incomes, threshold=0.72, min_k=0, max_k=999999)
+    query_embedding = call_embed_api(question['transformed_question'])
     # 요약본
-    relevant_summaries = filter_docs(summaries, threshold=0.8, min_k=1, max_k=24)
+    summaries = filter_docs(summaries, threshold=0.8, min_k=1, max_k=24)
     # 예산안
-    relevant_budgets = []#filter_docs(budgets, threshold=0.8, min_k=2, max_k=24)
+    budgets = []#filter_docs(budgets, threshold=0.8, min_k=2, max_k=24)
     # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
-    relevant_expenses = filter_docs(expenses, threshold=0.72, min_k=0, max_k=100)
+    expenses = filter_docs(expenses, threshold=0.72, min_k=0, max_k=100)
     # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
-    relevant_incomes = filter_docs(incomes, threshold=0.72, min_k=0, max_k=100)
+    incomes = filter_docs(incomes, threshold=0.72, min_k=0, max_k=100)
     # 대화 내역: 문맥 파악용으로 최대 3개
-    relevant_histories = filter_docs(chat_histories, threshold=0.72, min_k=0, max_k=3)
+    chat_histories = filter_docs(chat_histories, threshold=0.72, min_k=0, max_k=3)
 
-    return relevant_summaries, relevant_budgets, relevant_expenses, relevant_incomes, relevant_histories 
+    return summaries, budgets, expenses, incomes, chat_histories 
 
 def retrieve_relevant_docs_vector(
         question: str, 
@@ -555,7 +596,7 @@ def answer_question_custom(uid: str, question: str) -> Dict[str, Any]:
     print(f"데이터 로드 및 추출: {retrieval_elapsed}")
 
     # 프롬프트 생성
-    prompt = build_prompt(transformed_query, summaries, budgets, expenses, incomes, histories)
+    prompt = build_prompt(transformed_query['transformed_question'], summaries, budgets, expenses, incomes, histories)
 
     gen_start = time.time()
     # api 호출
@@ -595,19 +636,19 @@ def answer_question_vector(uid: str, question: str) -> Dict[str, Any]:
     # 데이터 로드 및 대화 내역 로드
     retrieved = retrieve_relevant_docs_with_vector_search(
         uid=uid,
-        query=transformed_query
+        query=transformed_query['transformed_question']
     )
     expenses = retrieved["expenses"]
     incomes = retrieved["incomes"]
     histories = retrieved["histories"]
 
     # 데이터 추출
-    summaries, budgets = retrieve_relevant_docs_vector(transformed_query, summaries, budgets)
+    summaries, budgets = retrieve_relevant_docs_vector(transformed_query['transformed_question'], summaries, budgets)
     retrieval_elapsed = time.time() - start
     print(f"데이터 로드 및 추출: {retrieval_elapsed}")
 
     # 프롬프트 생성
-    prompt = build_prompt(transformed_query, summaries, budgets, expenses, incomes, histories)
+    prompt = build_prompt(transformed_query['transformed_question'], summaries, budgets, expenses, incomes, histories)
 
     gen_start = time.time()
     # api 호출
@@ -725,7 +766,7 @@ def answer_question_keyword(uid: str, question: str) -> Dict[str, Any]:
     print(f"데이터 로드 및 추출: {retrieval_elapsed}")
 
     # 프롬프트 생성
-    prompt = build_prompt(transformed_query, summaries, budgets, expenses, incomes, histories)
+    prompt = build_prompt(transformed_query['transformed_question'], summaries, budgets, expenses, incomes, histories)
 
     gen_start = time.time()
     # api 호출
@@ -773,7 +814,7 @@ def answer_question_all(uid: str, question: str) -> Dict[str, Any]:
     print(f"데이터 로드 및 추출: {retrieval_elapsed}")
 
     # 프롬프트 생성
-    prompt = build_prompt(transformed_query, summaries, budgets, expenses, incomes, histories)
+    prompt = build_prompt(transformed_query['transformed_question'], summaries, budgets, expenses, incomes, histories)
 
     gen_start = time.time()
     # api 호출

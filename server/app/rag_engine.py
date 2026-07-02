@@ -445,10 +445,12 @@ def retrieve_relevant_docs_custom(
             # 유사도 계산
             score = cosine_similarity(query_embedding, doc["embedding"])
             # 유사도를 추가한 문서 리스트에 추가
+            print(score)
             scored.append({
                 **doc, 
                 "score": score
             })
+        print()
         # 유사도 순 정렬
         scored.sort(key=lambda x: x["score"], reverse=True)
         

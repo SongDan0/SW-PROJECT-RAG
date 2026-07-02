@@ -176,7 +176,6 @@ def transform_query(question: str) -> str:
 
 사용자의 질문: "{question}"
 """
-    print(prompt)
 
     start = time.time()
     transformed = call_gemini(prompt)
@@ -445,12 +444,10 @@ def retrieve_relevant_docs_custom(
             # 유사도 계산
             score = cosine_similarity(query_embedding, doc["embedding"])
             # 유사도를 추가한 문서 리스트에 추가
-            print(score)
             scored.append({
                 **doc, 
                 "score": score
             })
-        print()
         # 유사도 순 정렬
         scored.sort(key=lambda x: x["score"], reverse=True)
         
@@ -463,15 +460,15 @@ def retrieve_relevant_docs_custom(
         
         # 최대 개수(max_k) 제한
         return passed[:max_k]
-    
+    ###
     # 요약본
-    summaries = filter_docs(summaries, threshold=0.7, min_k=1, max_k=24)
+    summaries = filter_docs(summaries, threshold=0.75, min_k=1, max_k=24)
     # 예산안
-    budgets = []#filter_docs(budgets, threshold=0.7, min_k=2, max_k=24)
+    budgets = []#filter_docs(budgets, threshold=0.75, min_k=2, max_k=24)
     # 개별 항목
-    expenses = filter_docs(expenses, threshold=0.5, min_k=0, max_k=100)
+    expenses = filter_docs(expenses, threshold=0.65, min_k=0, max_k=100)
     # 개별 항목
-    incomes = filter_docs(incomes, threshold=0.5, min_k=0, max_k=100)
+    incomes = filter_docs(incomes, threshold=0.65, min_k=0, max_k=100)
     # 대화 내역
     chat_histories = filter_docs(chat_histories, threshold=0.7, min_k=0, max_k=5)
 
@@ -523,9 +520,9 @@ def retrieve_relevant_docs_vector(
         return passed[:max_k]
 
     # 요약본
-    relevant_summaries = filter_docs(summaries, threshold=0.8, min_k=1, max_k=24)
+    relevant_summaries = filter_docs(summaries, threshold=0.75, min_k=1, max_k=24)
     # 예산안
-    relevant_budgets = []#filter_docs(budgets, threshold=0.8, min_k=2, max_k=24)
+    relevant_budgets = []#filter_docs(budgets, threshold=0.75, min_k=2, max_k=24)
 
     return relevant_summaries, relevant_budgets
 
@@ -606,8 +603,6 @@ def answer_question_custom(uid: str, question: str) -> Dict[str, Any]:
     # 대화 내역 로드
     histories = load_chat_history(uid)
     
-    print(transformed_query)
-    print([expense["id"] for expense in expenses])
     # 데이터 추출
     summaries, budgets, expenses, incomes, histories = retrieve_relevant_docs_custom(transformed_query, summaries, budgets, expenses, incomes, histories)
     retrieval_elapsed = time.time() - start
@@ -869,35 +864,34 @@ def answer_question(uid: str, question: str) -> Dict[str, Any]:
     print()
     time.sleep(1)
     """
-    """
+
     print("키워드 매칭")
     answer = answer_question_keyword(uid, question)
     print(answer["references"])
     #print(answer["answer"])
     print()
     time.sleep(1)
-    """
+
     print("임계치, 최소 및 최대 개수 지정을 통한 추출 방식")
     answer = answer_question_custom(uid, question)
     print(answer["references"])
     #print(answer["answer"])
     print()
     time.sleep(1)
-    """
+
     print("임계치, 최소 및 최대 개수 지정을 통한 추출 방식과 firebase의 벡터 검색 기능 혼합")
     answer = answer_question_vector(uid, question)
     print(answer["references"])
     #print(answer["answer"])
     print()
     time.sleep(1)
-    """
-    """
+
     start = time.time()
     # 대화 내용 저장
     save_chat_history(uid, question, answer, "general")
     delay = time.time() - start
     print(f"대화 내용 저장: {delay}")
-    """
+
     return answer
 
 

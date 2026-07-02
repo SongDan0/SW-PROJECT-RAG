@@ -68,22 +68,22 @@ def create_sentence(data: Dict[str, Any]) -> str:
         expense_type = "고정" if data['is_fixed_expense'] else "변동"
         return (
             f"{data['date']} {data['time']} "
-            f"{data['category']} {data['amount']}원 "
-            f"{expense_type}지출 "
-            f"결제 방법:{data['payment_method']} "
-            f"사용처:{data['place']} "
-            f"메모:{data['memo']}"
+            f"{data['category']} {data['amount']}"
+            f"{expense_type}"
+            f"{data['payment_method']} "
+            f"{data['place']} "
+            f"{data['memo']}"
         )
     elif "is_fixed_income" in data:
         income_type = "고정" if data['is_fixed_income'] else "변동"
     
         return (
             f"{data['date']} {data['time']} "
-            f"{data['category']} {data['amount']}원 "
-            f"{income_type} 수입 "
-            f"입금방법:{data['deposit_method']} "
-            f"입금처:{data['deposit_source']} "
-            f"메모:{data['memo']}"
+            f"{data['category']} {data['amount']}"
+            f"{income_type}"
+            f"{data['deposit_method']} "
+            f"{data['deposit_source']} "
+            f"{data['memo']}"
     )
     raise ValueError(f"지원하지 않는 데이터 형식입니다: {data}")
 

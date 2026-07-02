@@ -703,7 +703,7 @@ def vector_search_user_collection(
             query_vector=Vector(query_embedding),
             distance_measure=DistanceMeasure.COSINE,
             limit=limit,
-            distance_threshold=0.3
+            distance_threshold=0.27
         )
     )
     ###
@@ -893,7 +893,6 @@ def answer_question(uid: str, question: str) -> Dict[str, Any]:
     print(f"대화 내용 저장: {delay}")
 
     return answer
-
 
 def extract_year_months(text: str):
     pattern = r'\b(\d{4})-(\d{2})\b'

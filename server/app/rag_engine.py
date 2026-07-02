@@ -210,7 +210,7 @@ def transform_query(question: str) -> str:
 
 [지시사항]
 1. 사용자의 질문에서 날짜 관련 표현(지난달, 이번달, 3월 등)을 찾아 YYYY-MM 형식의 절대 날짜로 변환하세요.
-2. 변환된 정보를 포함하여 질문을 재구성하세요.
+2. 질문을 재구성할 때, 날짜는 반드시 "YYYY-MM" 형식으로 작성하세요.
 3. 다른 설명 없이 재구성된 질문만 반환하세요.
 4. 날짜 언급이 없다면 질문을 그대로 반환하세요.
 
@@ -447,7 +447,7 @@ def retrieve_relevant_docs_custom(
     
     ###
     # 사용자 질문 임베딩
-    if(question['transformed_question']):
+    if(question['date']):
         query_embedding = call_embed_api(question['date'])
         # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
         expenses = filter_docs(expenses, threshold=0.72, min_k=0, max_k=999999)

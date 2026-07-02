@@ -186,8 +186,9 @@ def transform_query1(question: str) -> str:
     delay = time.time() - start
     print(f"2.5 Flash Lite 모델로 질문 전처리: {delay}")
     """
-
-    return transformed if transformed else question
+    transformed = json.loads(transformed) 
+    return transformed
+    #return transformed if transformed else question
 
 def transform_query(question: str) -> str:
     now = datetime.now()

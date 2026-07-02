@@ -603,10 +603,11 @@ def answer_question_custom(uid: str, question: str) -> Dict[str, Any]:
     incomes = load_incomes_date(uid, True, dateList)
     # 대화 내역 로드
     histories = load_chat_history(uid)
-
+    
     print(transformed_query)
+    print([expenses["id"] for doc in docs])
     # 데이터 추출
-    summaries, budgets, expenses, incomes, histories = retrieve_relevant_docs_custom(transformed_query, summaries, budgets, expenses, incomes, histories)
+    summaries, budgets, expenses, incomes, histories = retrieve_relevant_docs_custom(question, summaries, budgets, expenses, incomes, histories)
     retrieval_elapsed = time.time() - start
     print(f"데이터 로드 및 추출: {retrieval_elapsed}")
 

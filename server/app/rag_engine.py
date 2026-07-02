@@ -864,7 +864,7 @@ def answer_question(uid: str, question: str) -> Dict[str, Any]:
     print()
     time.sleep(1)
     """
-    """
+    
     print("키워드 매칭")
     answer = answer_question_keyword(uid, question)
     print(answer["references"])
@@ -878,7 +878,7 @@ def answer_question(uid: str, question: str) -> Dict[str, Any]:
     #print(answer["answer"])
     print()
     time.sleep(1)
-"""
+
     print("임계치, 최소 및 최대 개수 지정을 통한 추출 방식과 firebase의 벡터 검색 기능 혼합")
     answer = answer_question_vector(uid, question)
     print(answer["references"])

@@ -802,13 +802,11 @@ def answer_question_all(uid: str, question: str) -> Dict[str, Any]:
 def answer_question(uid: str, question: str) -> Dict[str, Any]:
     load_monthly_summaries(uid)
     print("______________________________________________________________________________")
-    """
     print("추출 없이 모든 데이터 사용")
     answer = answer_question_all(uid, question)
     print(answer["references"])
     print()
-    time.sleep(10)
-    """
+    time.sleep(1)
 
     print("키워드 매칭")
     answer = answer_question_keyword(uid, question)

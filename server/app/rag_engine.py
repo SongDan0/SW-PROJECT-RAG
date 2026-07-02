@@ -16,6 +16,7 @@ from app.rag_utils import load_chat_history, save_chat_history, cosine_similarit
 from google.cloud.firestore_v1.vector import Vector
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 #마찬가지로 기본 rag util을 분리
+import re
 
 
 # db
@@ -190,7 +191,17 @@ def transform_query(question: str) -> str:
     return transformed
     #return transformed if transformed else question
 
-def transform_query1(question: str) -> str:
+def extract_year_months(text: str):
+    # \b: 단어 경계, \d{4}: 숫자 4개, -: 하이픈, \d{2}: 숫자 2개
+    pattern = r'\b(\d{4})-(\d{2})\b'
+    # findall은 모든 매칭 항목을 리스트로 반환함
+    matches = re.findall(pattern, text)
+    
+    # matches는 [('2026', '03'), ('2026', '04')] 형태가 됨
+    # 이를 다시 "YYYY-MM" 문자열 형태로 합치기
+    return [f"{y}-{m}" for y, m in matches]
+
+def transform_query(question: str) -> str:
     now = datetime.now()
     current_date = now.strftime("%Y-%m-%d")
     
@@ -215,16 +226,10 @@ def transform_query1(question: str) -> str:
     transformed = call_gemini(prompt)
     delay = time.time() - start
     #print(f"2.5 Flash 모델로 질문 전처리: {delay}")
-    print(f"{transformed['transformed_question']}")
-    print(f"{transformed['date']}")
-    """
-    start = time.time()
-    transformed = call_gemini(prompt, flag=True)
-    delay = time.time() - start
-    print(f"2.5 Flash Lite 모델로 질문 전처리: {delay}")
-    """
+    date = extract_year_months(transformed)
+    trans = {'transformed_question': transformed, 'date':date }
 
-    return transformed if transformed else question
+    return trans
 
 def load_monthly_summaries(uid: str) -> List[Dict[str, Any]]:
     """

@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List
+import time
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -135,9 +136,6 @@ def get_expenses(uid: str = Depends(verify_firebase_token)):
 
 @app.post("/expenses", response_model=Expense)
 def create_expense(expense_in: ExpenseIn, uid: str = Depends(verify_firebase_token)):
-    print("POST /expenses called", flush=True)
-    print("uid =", uid, flush=True)
-    print("expense_in =", expense_in.model_dump(), flush=True)
 
     try:
         expenses_ref = db.collection("users").document(uid).collection("expenses")
@@ -165,6 +163,46 @@ def create_expense(expense_in: ExpenseIn, uid: str = Depends(verify_firebase_tok
         print("create_expense error =", str(e), flush=True)
         raise
 
+@app.post("/expenses/bulk", response_model=list[Expense])
+def create_expenses_bulk(expenses_in: list[ExpenseIn], uid: str = Depends(verify_firebase_token)):
+    try:
+        batch = db.batch() # 파이어스토어 배치 객체 생성
+        expenses_ref = db.collection("users").document(uid).collection("expenses")
+        
+        results = []
+        
+        for expense_in in expenses_in:
+            doc_ref = expenses_ref.document()
+            
+            # RAG 레코드 생성
+            time.sleep(1)
+            record = build_rag_record(expense_in.model_dump())
+            
+            # 배치에 저장 작업 추가
+            batch.set(doc_ref, record)
+            
+            # 응답용 데이터 생성
+            result = {"id": doc_ref.id, **expense_in.model_dump()}
+            results.append(result)
+            
+            # [수정] 요약본 업데이트 호출 (개별 호출)
+            process_expense_change(uid, expense_in, mode="add")
+            
+            # 변동 지출 입력시 예산안 업데이트 (개별 호출)
+            if not expense_in.is_fixed_expense:
+                year_month = expense_in.date[:7]
+                refresh_total_budget(uid, year_month)
+        
+        # 배치 커밋 (모든 작업을 한 번에 서버로 전송)
+        batch.commit()
+        print(f"{len(expenses_in)} records saved to firestore via batch", flush=True)
+
+        return results
+
+    except Exception as e:
+        print("create_expenses_bulk error =", str(e), flush=True)
+        raise HTTPException(status_code=500, detail=str(e))
+    
 @app.put("/expenses/{expense_id}", response_model=Expense)
 def update_expense(expense_id: str, expense_in: ExpenseIn, uid: str = Depends(verify_firebase_token)):
     doc_ref = db.collection("users").document(uid).collection("expenses").document(expense_id)

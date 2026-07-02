@@ -413,11 +413,11 @@ def retrieve_relevant_docs_custom(
     # 예산안
     relevant_budgets = []#filter_docs(budgets, threshold=0.6, min_k=2, max_k=24)
     # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
-    relevant_expenses = filter_docs(expenses, threshold=0.7, min_k=1, max_k=100)
+    relevant_expenses = filter_docs(expenses, threshold=0.75, min_k=0, max_k=100)
     # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
-    relevant_incomes = filter_docs(incomes, threshold=0.7, min_k=1, max_k=30)
+    relevant_incomes = filter_docs(incomes, threshold=0.75, min_k=0, max_k=100)
     # 대화 내역: 문맥 파악용으로 최대 3개
-    relevant_histories = filter_docs(chat_histories, threshold=0.7, min_k=0, max_k=3)
+    relevant_histories = filter_docs(chat_histories, threshold=0.75, min_k=0, max_k=3)
 
     return relevant_summaries, relevant_budgets, relevant_expenses, relevant_incomes, relevant_histories 
 
@@ -525,7 +525,7 @@ def retrieve_relevant_docs_keyword(
 
     # 3. 키워드 매칭 적용
     relevant_summaries = filter_docs_by_keyword(summaries, keywords)[:24]
-    relevant_budgets = []#filter_docs_by_keyword(budgets, keywords)[:3]
+    relevant_budgets = []#filter_docs_by_keyword(budgets, keywords)[:24]
     relevant_expenses = filter_docs_by_keyword(expenses, keywords)[:100]
     relevant_incomes = filter_docs_by_keyword(incomes, keywords)[:100]
     relevant_histories = filter_docs_by_keyword(chat_histories, keywords)[:5]
@@ -649,7 +649,7 @@ def vector_search_user_collection(
             query_vector=Vector(query_embedding),
             distance_measure=DistanceMeasure.COSINE,
             limit=limit,
-            distance_threshold=0.3
+            distance_threshold=0.25
         )
     )
 

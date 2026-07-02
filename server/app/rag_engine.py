@@ -703,7 +703,7 @@ def vector_search_user_collection(
             query_vector=Vector(query_embedding),
             distance_measure=DistanceMeasure.COSINE,
             limit=limit,
-            distance_threshold=0.27
+            distance_threshold=0.35
         )
     )
     ###

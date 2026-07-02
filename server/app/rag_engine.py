@@ -463,13 +463,13 @@ def retrieve_relevant_docs_custom(
         return passed[:max_k]
     
     # 요약본
-    summaries = filter_docs(summaries, threshold=0.8, min_k=1, max_k=24)
+    summaries = filter_docs(summaries, threshold=0.7, min_k=1, max_k=24)
     # 예산안
-    budgets = []#filter_docs(budgets, threshold=0.8, min_k=2, max_k=24)
+    budgets = []#filter_docs(budgets, threshold=0.7, min_k=2, max_k=24)
     # 개별 항목
-    expenses = filter_docs(expenses, threshold=0.7, min_k=0, max_k=100)
+    expenses = filter_docs(expenses, threshold=0.5, min_k=0, max_k=100)
     # 개별 항목
-    incomes = filter_docs(incomes, threshold=0.7, min_k=0, max_k=100)
+    incomes = filter_docs(incomes, threshold=0.5, min_k=0, max_k=100)
     # 대화 내역
     chat_histories = filter_docs(chat_histories, threshold=0.7, min_k=0, max_k=5)
 
@@ -607,7 +607,7 @@ def answer_question_custom(uid: str, question: str) -> Dict[str, Any]:
     print(transformed_query)
     print([expense["id"] for expense in expenses])
     # 데이터 추출
-    summaries, budgets, expenses, incomes, histories = retrieve_relevant_docs_custom(question, summaries, budgets, expenses, incomes, histories)
+    summaries, budgets, expenses, incomes, histories = retrieve_relevant_docs_custom(transformed_query, summaries, budgets, expenses, incomes, histories)
     retrieval_elapsed = time.time() - start
     print(f"데이터 로드 및 추출: {retrieval_elapsed}")
 

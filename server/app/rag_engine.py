@@ -159,7 +159,7 @@ def process_expense_change(uid: str, data: Union[ExpenseIn, IncomeIn], mode: str
     updated_summary = update_summary(summary, data, mode)
     doc_ref.set(updated_summary.dict())
 
-def transform_query1(question: str) -> str:
+def transform_query(question: str) -> str:
     now = datetime.now()
     current_date = now.strftime("%Y-%m-%d")
     
@@ -190,7 +190,7 @@ def transform_query1(question: str) -> str:
     return transformed
     #return transformed if transformed else question
 
-def transform_query(question: str) -> str:
+def transform_query1(question: str) -> str:
     now = datetime.now()
     current_date = now.strftime("%Y-%m-%d")
     

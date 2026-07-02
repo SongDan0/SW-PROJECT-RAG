@@ -169,7 +169,8 @@ def transform_query(question: str) -> str:
 
 [지시사항]
 1. 사용자의 질문에서 날짜 관련 표현(지난달, 이번달, 3월 등)을 찾아 YYYY-MM 형식의 절대 날짜로 변환하세요.
-2. 질문을 재구성할 때, 날짜는 반드시 "YYYY-MM" 형식으로 작성하세요.
+2. 날짜 관련 표현이 날짜 범위(예: 3월부터 7월까지)일 경우, 해당 범위에 포함된 모든 월(3, 4, 5, 6, 7월)을 YYYY-MM 형식으로 나열하는 방식으로 변환하세요.
+3. 질문을 재구성할 때, 날짜는 반드시 "YYYY-MM" 형식으로 작성하세요.
 3. 다른 설명 없이 재구성된 질문만 반환하세요.
 4. 날짜 언급이 없다면 질문을 그대로 반환하세요.
 
@@ -259,7 +260,7 @@ def load_incomes(uid: str) -> List[Dict[str, Any]]:
 def load_expenses_date(uid: str, flag: bool = False, dateList: list = None) -> List[Dict[str, Any]]:
     collection_ref = db.collection("users").document(uid).collection("expenses")
     expenses = []
-    if flag and date:
+    if flag and dateList:
         for date in dateList:
             start_date = f"{date}-01"
             end_date = f"{date}-32"
@@ -286,7 +287,7 @@ def load_expenses_date(uid: str, flag: bool = False, dateList: list = None) -> L
 def load_incomes_date(uid: str, flag: bool = False, dateList: list = None) -> List[Dict[str, Any]]:
     collection_ref = db.collection("users").document(uid).collection("incomes")
     incomes = []
-    if flag and date:
+    if flag and dateList:
         for date in dateList:
             start_date = f"{date}-01"
             end_date = f"{date}-32"
@@ -898,11 +899,7 @@ def answer_question(uid: str, question: str) -> Dict[str, Any]:
 
 
 def extract_year_months(text: str):
-    # \b: 단어 경계, \d{4}: 숫자 4개, -: 하이픈, \d{2}: 숫자 2개
     pattern = r'\b(\d{4})-(\d{2})\b'
-    # findall은 모든 매칭 항목을 리스트로 반환함
     matches = re.findall(pattern, text)
-    
-    # matches는 [('2026', '03'), ('2026', '04')] 형태가 됨
-    # 이를 다시 "YYYY-MM" 문자열 형태로 합치기
-    return [f"{y}-{m}" for y, m in matches]
+    formatted_list = [f"{y}-{m}" for y, m in matches]
+    return list(dict.fromkeys(formatted_list))

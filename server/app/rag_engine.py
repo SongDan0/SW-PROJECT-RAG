@@ -590,6 +590,7 @@ def answer_question_custom(uid: str, question: str) -> Dict[str, Any]:
     # 대화 내역 로드
     histories = load_chat_history(uid)
 
+    print(transformed_query)
     # 데이터 추출
     summaries, budgets, expenses, incomes, histories = retrieve_relevant_docs_custom(transformed_query, summaries, budgets, expenses, incomes, histories)
     retrieval_elapsed = time.time() - start

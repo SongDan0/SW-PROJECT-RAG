@@ -67,23 +67,23 @@ def create_sentence(data: Dict[str, Any]) -> str:
     if "is_fixed_expense" in data:
         expense_type = "고정" if data['is_fixed_expense'] else "변동"
         return (
-            f"{data['date']} {data['time']}에 {data['category']} 카테고리로 "
-            f"{data['amount']}원을 지출하였다. "
-            f"이 지출은 {expense_type} 지출이며, "
-            f"결제수단은 {data['payment_method']}이고, "
-            f"사용처는 {data['place']}이다. "
-            f"메모: {data['memo']}."
+            f"{data['date']} {data['time']} "
+            f"{data['category']} {data['amount']}원 "
+            f"{expense_type}지출 "
+            f"결제 방법:{data['payment_method']} "
+            f"사용처:{data['place']} "
+            f"메모:{data['memo']}"
         )
     elif "is_fixed_income" in data:
         income_type = "고정" if data['is_fixed_income'] else "변동"
     
         return (
-            f"{data['date']} {data['time']}에 {data['amount']}원의 "
-            f"수입이 발생하였다. "
-            f"이 수입은 {income_type} 수입이며, "
-            f"입금방법은 {data['deposit_method']}이고, "
-            f"입금처는 {data['deposit_source']}이다. "
-            f"메모: {data['memo']}."
+            f"{data['date']} {data['time']} "
+            f"{data['category']} {data['amount']}원 "
+            f"{income_type} 수입 "
+            f"입금방법:{data['deposit_method']} "
+            f"입금처:{data['deposit_source']} "
+            f"메모:{data['memo']}"
     )
     raise ValueError(f"지원하지 않는 데이터 형식입니다: {data}")
 
@@ -801,32 +801,33 @@ def answer_question_all(uid: str, question: str) -> Dict[str, Any]:
 
 def answer_question(uid: str, question: str) -> Dict[str, Any]:
     load_monthly_summaries(uid)
+    """
     print("______________________________________________________________________________")
     print("추출 없이 모든 데이터 사용")
     answer = answer_question_all(uid, question)
     print(answer["references"])
-    print(answer["answer"])
+    #print(answer["answer"])
     print()
     time.sleep(1)
-
+    """
     print("키워드 매칭")
     answer = answer_question_keyword(uid, question)
     print(answer["references"])
-    print(answer["answer"])
+    #print(answer["answer"])
     print()
     time.sleep(1)
     
     print("임계치, 최소 및 최대 개수 지정을 통한 추출 방식")
     answer = answer_question_custom(uid, question)
     print(answer["references"])
-    print(answer["answer"])
+    #print(answer["answer"])
     print()
     time.sleep(1)
 
     print("임계치, 최소 및 최대 개수 지정을 통한 추출 방식과 firebase의 벡터 검색 기능 혼합")
     answer = answer_question_vector(uid, question)
     print(answer["references"])
-    print(answer["answer"])
+    #print(answer["answer"])
     print()
     time.sleep(1)
 

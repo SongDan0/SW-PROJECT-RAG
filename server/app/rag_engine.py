@@ -605,7 +605,7 @@ def answer_question_custom(uid: str, question: str) -> Dict[str, Any]:
     histories = load_chat_history(uid)
     
     print(transformed_query)
-    print([expenses["id"] for doc in docs])
+    print([expense["id"] for expense in expenses])
     # 데이터 추출
     summaries, budgets, expenses, incomes, histories = retrieve_relevant_docs_custom(question, summaries, budgets, expenses, incomes, histories)
     retrieval_elapsed = time.time() - start

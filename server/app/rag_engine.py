@@ -769,7 +769,7 @@ def answer_question_all(uid: str, question: str) -> Dict[str, Any]:
     histories = load_chat_history(uid)
 
     retrieval_elapsed = time.time() - start
-    print(f"지출 항목 개수: {len(expenses)}, 이전 채팅 기록 개수: {len(histories)}, 월별 요약본 및 예산안 개수: {len(summaries)}")
+    print(f"데이터 개수 개수: {len(expenses) + len(summaries) + len(histories)} + len(budgets) ")
     print(f"데이터 로드 및 추출: {retrieval_elapsed}")
 
     # 프롬프트 생성
@@ -805,24 +805,28 @@ def answer_question(uid: str, question: str) -> Dict[str, Any]:
     print("추출 없이 모든 데이터 사용")
     answer = answer_question_all(uid, question)
     print(answer["references"])
+
     print()
     time.sleep(1)
 
     print("키워드 매칭")
     answer = answer_question_keyword(uid, question)
     print(answer["references"])
+    print(answer["answer"])
     print()
     time.sleep(1)
     
     print("임계치, 최소 및 최대 개수 지정을 통한 추출 방식")
     answer = answer_question_custom(uid, question)
     print(answer["references"])
+    print(answer["answer"])
     print()
     time.sleep(1)
 
     print("임계치, 최소 및 최대 개수 지정을 통한 추출 방식과 firebase의 벡터 검색 기능 혼합")
     answer = answer_question_vector(uid, question)
     print(answer["references"])
+    print(answer["answer"])
     print()
     time.sleep(1)
 

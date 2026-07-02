@@ -409,11 +409,11 @@ def retrieve_relevant_docs_custom(
         return passed[:max_k]
 
     # 요약본
-    relevant_summaries = filter_docs(summaries, threshold=0.6, min_k=1, max_k=3)
+    relevant_summaries = filter_docs(summaries, threshold=0.6, min_k=1, max_k=24)
     # 예산안
-    relevant_budgets = filter_docs(budgets, threshold=0.6, min_k=2, max_k=3)
+    relevant_budgets = []#filter_docs(budgets, threshold=0.6, min_k=2, max_k=24)
     # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
-    relevant_expenses = filter_docs(expenses, threshold=0.7, min_k=1, max_k=30)
+    relevant_expenses = filter_docs(expenses, threshold=0.7, min_k=1, max_k=100)
     # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
     relevant_incomes = filter_docs(incomes, threshold=0.7, min_k=1, max_k=30)
     # 대화 내역: 문맥 파악용으로 최대 3개
@@ -467,9 +467,9 @@ def retrieve_relevant_docs_vector(
         return passed[:max_k]
 
     # 요약본
-    relevant_summaries = filter_docs(summaries, threshold=0.6, min_k=1, max_k=3)
+    relevant_summaries = filter_docs(summaries, threshold=0.6, min_k=1, max_k=24)
     # 예산안
-    relevant_budgets = filter_docs(budgets, threshold=0.6, min_k=2, max_k=3)
+    relevant_budgets = []#filter_docs(budgets, threshold=0.6, min_k=2, max_k=24)
 
     return relevant_summaries, relevant_budgets
 
@@ -524,11 +524,11 @@ def retrieve_relevant_docs_keyword(
         return matched
 
     # 3. 키워드 매칭 적용
-    relevant_summaries = filter_docs_by_keyword(summaries, keywords)[:3]
-    relevant_budgets = filter_docs_by_keyword(budgets, keywords)[:3]
-    relevant_expenses = filter_docs_by_keyword(expenses, keywords)[:30]
-    relevant_incomes = filter_docs_by_keyword(incomes, keywords)[:30]
-    relevant_histories = filter_docs_by_keyword(chat_histories, keywords)[:3]
+    relevant_summaries = filter_docs_by_keyword(summaries, keywords)[:24]
+    relevant_budgets = []#filter_docs_by_keyword(budgets, keywords)[:3]
+    relevant_expenses = filter_docs_by_keyword(expenses, keywords)[:100]
+    relevant_incomes = filter_docs_by_keyword(incomes, keywords)[:100]
+    relevant_histories = filter_docs_by_keyword(chat_histories, keywords)[:5]
 
     return relevant_summaries, relevant_budgets, relevant_expenses, relevant_incomes, relevant_histories
 
@@ -597,9 +597,9 @@ def answer_question_vector(uid: str, question: str) -> Dict[str, Any]:
         uid=uid,
         query=transformed_query
     )
-    expenses = retrieved["expenses"][0:30]
-    incomes = retrieved["incomes"][0:30]
-    histories = retrieved["histories"][0:3]
+    expenses = retrieved["expenses"]
+    incomes = retrieved["incomes"]
+    histories = retrieved["histories"]
 
     # 데이터 추출
     summaries, budgets = retrieve_relevant_docs_vector(transformed_query, summaries, budgets)
@@ -678,21 +678,21 @@ def retrieve_relevant_docs_with_vector_search(
         uid=uid,
         collection_name="expenses",
         query_embedding=query_embedding,
-        limit=30
+        limit=100
     )
 
     incomes = vector_search_user_collection(
         uid=uid,
         collection_name="Incomes",
         query_embedding=query_embedding,
-        limit=30
+        limit=100
     )
 
     histories = vector_search_user_collection(
         uid=uid,
         collection_name="chat_history",
         query_embedding=query_embedding,
-        limit=3
+        limit=5
     )
 
     return {
@@ -769,7 +769,7 @@ def answer_question_all(uid: str, question: str) -> Dict[str, Any]:
     histories = load_chat_history(uid)
 
     retrieval_elapsed = time.time() - start
-    print(f"데이터 개수 개수: {len(expenses) + len(summaries) + len(histories)} + {len(budgets)} ")
+    print(f"데이터 개수: {len(expenses)} ")
     print(f"데이터 로드 및 추출: {retrieval_elapsed}")
 
     # 프롬프트 생성

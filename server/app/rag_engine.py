@@ -149,7 +149,7 @@ def process_expense_change(uid: str, data: Union[ExpenseIn, IncomeIn], mode: str
         summary = SummaryIn(**doc.to_dict())
     else:
         # 텍스트 생성 후 즉시 임베딩화하여 저장
-        text = f"{year_month}"
+        text = f"{year_month} 지출 요약 및 통계 내역"
         embedding = call_embed_api(text)
         summary = SummaryIn(
             year_month=year_month,

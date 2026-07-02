@@ -413,9 +413,9 @@ def retrieve_relevant_docs_custom(
     # 예산안
     relevant_budgets = filter_docs(budgets, threshold=0.6, min_k=2, max_k=3)
     # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
-    relevant_expenses = filter_docs(expenses, threshold=0.75, min_k=1, max_k=30)
+    relevant_expenses = filter_docs(expenses, threshold=0.7, min_k=1, max_k=30)
     # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
-    relevant_incomes = filter_docs(incomes, threshold=0.75, min_k=1, max_k=30)
+    relevant_incomes = filter_docs(incomes, threshold=0.7, min_k=1, max_k=30)
     # 대화 내역: 문맥 파악용으로 최대 3개
     relevant_histories = filter_docs(chat_histories, threshold=0.7, min_k=0, max_k=3)
 
@@ -802,34 +802,37 @@ def answer_question_all(uid: str, question: str) -> Dict[str, Any]:
 def answer_question(uid: str, question: str) -> Dict[str, Any]:
     load_monthly_summaries(uid)
     print("______________________________________________________________________________")
+    """
     print("추출 없이 모든 데이터 사용")
     answer = answer_question_all(uid, question)
     print(answer["references"])
     print()
     time.sleep(10)
+    """
 
     print("키워드 매칭")
     answer = answer_question_keyword(uid, question)
     print(answer["references"])
     print()
-    time.sleep(10)
+    time.sleep(1)
     
     print("임계치, 최소 및 최대 개수 지정을 통한 추출 방식")
     answer = answer_question_custom(uid, question)
     print(answer["references"])
     print()
-    time.sleep(10)
+    time.sleep(1)
 
     print("임계치, 최소 및 최대 개수 지정을 통한 추출 방식과 firebase의 벡터 검색 기능 혼합")
     answer = answer_question_vector(uid, question)
     print(answer["references"])
     print()
-    time.sleep(10)
+    time.sleep(1)
 
+    """
     start = time.time()
     # 대화 내용 저장
     save_chat_history(uid, question, answer, "general")
     delay = time.time() - start
     print(f"대화 내용 저장: {delay}")
-
+    """
     return answer

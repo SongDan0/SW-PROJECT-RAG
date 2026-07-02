@@ -160,7 +160,7 @@ def process_expense_change(uid: str, data: Union[ExpenseIn, IncomeIn], mode: str
     updated_summary = update_summary(summary, data, mode)
     doc_ref.set(updated_summary.dict())
 
-def transform_query(question: str) -> str:
+def transform_query1(question: str) -> str:
     now = datetime.now()
     current_date = now.strftime("%Y-%m-%d")
     
@@ -187,10 +187,10 @@ def transform_query(question: str) -> str:
     delay = time.time() - start
     print(f"2.5 Flash Lite 모델로 질문 전처리: {delay}")
     """
-    transformed = json.loads(transformed) 
-    return transformed
-    #return transformed if transformed else question
 
+    return transformed if transformed else question
+
+###
 def extract_year_months(text: str):
     # \b: 단어 경계, \d{4}: 숫자 4개, -: 하이픈, \d{2}: 숫자 2개
     pattern = r'\b(\d{4})-(\d{2})\b'
@@ -216,7 +216,6 @@ def transform_query(question: str) -> str:
 
 사용자의 질문: "{question}"
 """
-    ##########
 
     start = time.time()
     transformed = call_gemini(prompt)
@@ -224,8 +223,10 @@ def transform_query(question: str) -> str:
     #print(f"2.5 Flash 모델로 질문 전처리: {delay}")
     date = extract_year_months(transformed)
     trans = {'transformed_question': transformed, 'date':date }
-
+    ###
+    print(trans)
     return trans
+###
 
 def load_monthly_summaries(uid: str) -> List[Dict[str, Any]]:
     """
@@ -397,7 +398,7 @@ def build_prompt(
 답변 (핵심 위주로 친절하게):
 """.strip()
 
-##################
+###
 def retrieve_relevant_docs_custom(
         question: str, 
         summaries: List[Dict[str, Any]],
@@ -442,7 +443,8 @@ def retrieve_relevant_docs_custom(
         
         # 최대 개수(max_k) 제한
         return passed[:max_k]
-
+    
+    ###
     # 사용자 질문 임베딩
     if(question['transformed_question']):
         query_embedding = call_embed_api(question['date'])
@@ -696,7 +698,7 @@ def vector_search_user_collection(
             distance_threshold=0.28
         )
     )
-
+    ###
     result = []
 
     for doc in query.stream():

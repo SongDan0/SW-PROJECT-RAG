@@ -160,47 +160,6 @@ def process_expense_change(uid: str, data: Union[ExpenseIn, IncomeIn], mode: str
     updated_summary = update_summary(summary, data, mode)
     doc_ref.set(updated_summary.dict())
 
-def transform_query1(question: str) -> str:
-    now = datetime.now()
-    current_date = now.strftime("%Y-%m-%d")
-    
-    prompt = f"""
-현재 날짜: {current_date}
-
-[지시사항]
-1. 사용자의 질문에서 날짜 관련 표현(지난달, 이번달, 3월 등)을 찾아 YYYY-MM 형식의 절대 날짜로 변환하세요.
-2. 변환된 정보를 포함하여 질문을 재구성하세요.
-3. 다른 설명 없이 재구성된 질문만 반환하세요.
-4. 날짜 언급이 없다면 질문을 그대로 반환하세요.
-
-사용자의 질문: "{question}"
-"""
-    ###
-
-    start = time.time()
-    transformed = call_gemini(prompt)
-    delay = time.time() - start
-    #print(f"2.5 Flash 모델로 질문 전처리: {delay}")
-    """
-    start = time.time()
-    transformed = call_gemini(prompt, flag=True)
-    delay = time.time() - start
-    print(f"2.5 Flash Lite 모델로 질문 전처리: {delay}")
-    """
-
-    return transformed if transformed else question
-
-###
-def extract_year_months(text: str):
-    # \b: 단어 경계, \d{4}: 숫자 4개, -: 하이픈, \d{2}: 숫자 2개
-    pattern = r'\b(\d{4})-(\d{2})\b'
-    # findall은 모든 매칭 항목을 리스트로 반환함
-    matches = re.findall(pattern, text)
-    
-    # matches는 [('2026', '03'), ('2026', '04')] 형태가 됨
-    # 이를 다시 "YYYY-MM" 문자열 형태로 합치기
-    return [f"{y}-{m}" for y, m in matches]
-
 def transform_query(question: str) -> str:
     now = datetime.now()
     current_date = now.strftime("%Y-%m-%d")
@@ -222,12 +181,15 @@ def transform_query(question: str) -> str:
     transformed = call_gemini(prompt)
     delay = time.time() - start
     #print(f"2.5 Flash 모델로 질문 전처리: {delay}")
-    date = extract_year_months(transformed)
-    trans = {'transformed_question': transformed, 'date':date }
     ###
-    print(trans)
-    return trans
-###
+    """
+    start = time.time()
+    transformed = call_gemini(prompt, flag=True)
+    delay = time.time() - start
+    print(f"2.5 Flash Lite 모델로 질문 전처리: {delay}")
+    """
+
+    return transformed if transformed else question
 
 def load_monthly_summaries(uid: str) -> List[Dict[str, Any]]:
     """
@@ -291,6 +253,60 @@ def load_incomes(uid: str) -> List[Dict[str, Any]]:
             **data         
         })
     # 모든 문서가 담긴 리스트 반환
+    return incomes
+
+###
+def load_expenses_date(uid: str, flag: bool = False, dateList: list = None) -> List[Dict[str, Any]]:
+    collection_ref = db.collection("users").document(uid).collection("expenses")
+    expenses = []
+    if flag and date:
+        for date in dateList:
+            start_date = f"{date}-01"
+            end_date = f"{date}-32"
+            # 범위 쿼리 실행
+            query = collection_ref.where("date", ">=", start_date).where("date", "<", end_date)
+            docs = query.stream()
+            for doc in docs:
+                data = doc.to_dict()
+                expenses.append({
+                    "id": doc.id,
+                    **data
+                })
+    else:
+        docs = collection_ref.stream()
+        for doc in docs:
+            data = doc.to_dict()
+            expenses.append({
+                "id": doc.id,
+                **data
+            })
+    return expenses
+
+###
+def load_incomes_date(uid: str, flag: bool = False, dateList: list = None) -> List[Dict[str, Any]]:
+    collection_ref = db.collection("users").document(uid).collection("incomes")
+    incomes = []
+    if flag and date:
+        for date in dateList:
+            start_date = f"{date}-01"
+            end_date = f"{date}-32"
+            # 범위 쿼리 실행
+            query = collection_ref.where("date", ">=", start_date).where("date", "<", end_date)
+            docs = query.stream()
+            for doc in docs:
+                data = doc.to_dict()
+                incomes.append({
+                    "id": doc.id,
+                    **data
+                })
+    else:
+        docs = collection_ref.stream()
+        for doc in docs:
+            data = doc.to_dict()
+            incomes.append({
+                "id": doc.id,
+                **data
+            })
     return incomes
 
 def load_budgets(uid: str) -> List[Dict[str, Any]]:
@@ -380,20 +396,20 @@ def build_prompt(
 
 너는 사용자의 자산 관리를 돕는 [스마트 가계부 분석가]이다. 아래 지침에 따라 답변해라.
 
-### [데이터 활용 가이드]
+[데이터 활용 가이드]
 1. **통계의 출처:** - 카테고리/결제 수단 총액은 **[월별 요약]**을 최우선 근거로 답변해라.
    - 요약본에 없는 구체적인 통계(예: 특정 식당 방문 횟수, 특정 시간대 지출 등)는 **[상세 지출 내역]**을 바탕으로 직접 계산하되, "검색된 내역을 바탕으로 확인한 결과~"와 같은 표현을 사용하여 데이터가 일부일 수 있음을 암시해라.
 2. **상세 내역의 유연성:** 상세 내역을 단순히 나열하지 말고, 질문의 맥락에 맞게 분석하여 답변에 녹여내라. (예: "주로 점심시간에 편의점 지출이 많으시네요")
 3. **인사이트 제공 (중요):** 데이터 분석 후에는 반드시 사용자의 소비 습관에 도움이 될 만한 **팁이나 조언**을 한 문장 이상 포함해라.
 
-### [참고 데이터]
+[참고 데이터]
 * [월별 요약]: {summary_context}
 * [예산안 요약]: {budget_context}
 * [상세 지출 내역]: {expense_context}
 * [상세 수입 내역]: {incomes_context}
 * [이전 대화]: {history_context}
 
-### [질문]
+[질문]
 "{question}"
 
 답변 (핵심 위주로 친절하게):
@@ -411,7 +427,7 @@ def retrieve_relevant_docs_custom(
     """
     사용자 질문과 가장 관련성이 높은 상위 k개의 문서를 반환
     """
-
+    query_embedding = call_embed_api(question)
     def filter_docs(
             docs: List[Dict[str, Any]], 
             threshold: float, 
@@ -445,25 +461,16 @@ def retrieve_relevant_docs_custom(
         # 최대 개수(max_k) 제한
         return passed[:max_k]
     
-    ###
-    # 사용자 질문 임베딩
-    if(question['date']):
-        query_embedding = call_embed_api(question['date'])
-        # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
-        expenses = filter_docs(expenses, threshold=0.72, min_k=0, max_k=999999)
-        # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
-        incomes = filter_docs(incomes, threshold=0.72, min_k=0, max_k=999999)
-    query_embedding = call_embed_api(question['transformed_question'])
     # 요약본
     summaries = filter_docs(summaries, threshold=0.8, min_k=1, max_k=24)
     # 예산안
     budgets = []#filter_docs(budgets, threshold=0.8, min_k=2, max_k=24)
-    # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
-    expenses = filter_docs(expenses, threshold=0.72, min_k=0, max_k=100)
-    # 개별 항목: 상세 내역은 관련 있는 것 위주로 최대 15개
-    incomes = filter_docs(incomes, threshold=0.72, min_k=0, max_k=100)
-    # 대화 내역: 문맥 파악용으로 최대 3개
-    chat_histories = filter_docs(chat_histories, threshold=0.72, min_k=0, max_k=3)
+    # 개별 항목
+    expenses = filter_docs(expenses, threshold=0.7, min_k=0, max_k=100)
+    # 개별 항목
+    incomes = filter_docs(incomes, threshold=0.7, min_k=0, max_k=100)
+    # 대화 내역
+    chat_histories = filter_docs(chat_histories, threshold=0.7, min_k=0, max_k=5)
 
     return summaries, budgets, expenses, incomes, chat_histories 
 
@@ -581,7 +588,8 @@ def retrieve_relevant_docs_keyword(
 def answer_question_custom(uid: str, question: str) -> Dict[str, Any]:
     # 사용자 질문의 날짜 관련 표현을 YYYY-MM or YYYY-MM-DD 형식으로 변환
     transformed_query = transform_query(question)
-    time.sleep(0.5)
+    ###
+    dateList = extract_year_months(transformed_query)
 
     start_total = time.time()
     start = time.time()
@@ -590,8 +598,8 @@ def answer_question_custom(uid: str, question: str) -> Dict[str, Any]:
     # 설정한 예산안 로드
     budgets = load_budgets(uid)
     # 데이터 로드
-    expenses = load_expenses(uid)
-    incomes = load_incomes(uid)
+    expenses = load_expenses_date(uid, True, dateList)
+    incomes = load_incomes_date(uid, True, dateList)
     # 대화 내역 로드
     histories = load_chat_history(uid)
 
@@ -602,7 +610,7 @@ def answer_question_custom(uid: str, question: str) -> Dict[str, Any]:
     print(f"데이터 로드 및 추출: {retrieval_elapsed}")
 
     # 프롬프트 생성
-    prompt = build_prompt(transformed_query['transformed_question'], summaries, budgets, expenses, incomes, histories)
+    prompt = build_prompt(transformed_query, summaries, budgets, expenses, incomes, histories)
 
     gen_start = time.time()
     # api 호출
@@ -642,19 +650,19 @@ def answer_question_vector(uid: str, question: str) -> Dict[str, Any]:
     # 데이터 로드 및 대화 내역 로드
     retrieved = retrieve_relevant_docs_with_vector_search(
         uid=uid,
-        query=transformed_query['transformed_question']
+        query=transformed_query
     )
     expenses = retrieved["expenses"]
     incomes = retrieved["incomes"]
     histories = retrieved["histories"]
 
     # 데이터 추출
-    summaries, budgets = retrieve_relevant_docs_vector(transformed_query['transformed_question'], summaries, budgets)
+    summaries, budgets = retrieve_relevant_docs_vector(transformed_query, summaries, budgets)
     retrieval_elapsed = time.time() - start
     print(f"데이터 로드 및 추출: {retrieval_elapsed}")
 
     # 프롬프트 생성
-    prompt = build_prompt(transformed_query['transformed_question'], summaries, budgets, expenses, incomes, histories)
+    prompt = build_prompt(transformed_query, summaries, budgets, expenses, incomes, histories)
 
     gen_start = time.time()
     # api 호출
@@ -696,7 +704,7 @@ def vector_search_user_collection(
             query_vector=Vector(query_embedding),
             distance_measure=DistanceMeasure.COSINE,
             limit=limit,
-            distance_threshold=0.28
+            distance_threshold=0.3
         )
     )
     ###
@@ -772,7 +780,7 @@ def answer_question_keyword(uid: str, question: str) -> Dict[str, Any]:
     print(f"데이터 로드 및 추출: {retrieval_elapsed}")
 
     # 프롬프트 생성
-    prompt = build_prompt(transformed_query['transformed_question'], summaries, budgets, expenses, incomes, histories)
+    prompt = build_prompt(transformed_query, summaries, budgets, expenses, incomes, histories)
 
     gen_start = time.time()
     # api 호출
@@ -820,7 +828,7 @@ def answer_question_all(uid: str, question: str) -> Dict[str, Any]:
     print(f"데이터 로드 및 추출: {retrieval_elapsed}")
 
     # 프롬프트 생성
-    prompt = build_prompt(transformed_query['transformed_question'], summaries, budgets, expenses, incomes, histories)
+    prompt = build_prompt(transformed_query, summaries, budgets, expenses, incomes, histories)
 
     gen_start = time.time()
     # api 호출
@@ -887,3 +895,14 @@ def answer_question(uid: str, question: str) -> Dict[str, Any]:
     print(f"대화 내용 저장: {delay}")
     """
     return answer
+
+
+def extract_year_months(text: str):
+    # \b: 단어 경계, \d{4}: 숫자 4개, -: 하이픈, \d{2}: 숫자 2개
+    pattern = r'\b(\d{4})-(\d{2})\b'
+    # findall은 모든 매칭 항목을 리스트로 반환함
+    matches = re.findall(pattern, text)
+    
+    # matches는 [('2026', '03'), ('2026', '04')] 형태가 됨
+    # 이를 다시 "YYYY-MM" 문자열 형태로 합치기
+    return [f"{y}-{m}" for y, m in matches]

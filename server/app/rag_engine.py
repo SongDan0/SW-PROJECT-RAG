@@ -887,7 +887,8 @@ def answer_question(uid: str, question: str) -> Dict[str, Any]:
     time.sleep(1)
 
     print("------")
-    answer_question_vector1(uid, question)
+    answer = answer_question_vector1(uid, question)
+    print(answer["references"])
     
     start = time.time()
     # 대화 내용 저장

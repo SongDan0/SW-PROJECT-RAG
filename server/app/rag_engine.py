@@ -885,6 +885,9 @@ def answer_question(uid: str, question: str) -> Dict[str, Any]:
     #print(answer["answer"])
     print()
     time.sleep(1)
+
+    print("------")
+    answer_question_vector1
     
     start = time.time()
     # 대화 내용 저장
@@ -899,3 +902,139 @@ def extract_year_months(text: str):
     matches = re.findall(pattern, text)
     formatted_list = [f"{y}-{m}" for y, m in matches]
     return list(dict.fromkeys(formatted_list))
+
+def vector_search_user_collection1(
+    uid: str,
+    collection_name: str,
+    query_embedding: list[float],
+    dateList: list[str],
+    limit: int = 5
+) -> List[Dict[str, Any]]:
+    
+    collection_ref = db.collection("users").document(uid).collection(collection_name)
+    results = []
+
+    # 각 날짜 범위별로 쿼리 수행
+    for date in dateList:
+        start_date = f"{date}-01"
+        end_date = f"{date}-32"
+        
+        # 1차: 날짜 범위로 필터링 후 find_nearest를 연결하여 벡터 검색 수행
+        # 주의: Firestore에서 날짜 범위 쿼리(where)와 벡터 쿼리(find_nearest)를 
+        # 결합하려면 적절한 인덱스가 설정되어 있어야 합니다.
+        query = (
+            collection_ref
+            .where("date", ">=", start_date)
+            .where("date", "<", end_date)
+            .find_nearest(
+                vector_field="embedding",
+                query_vector=Vector(query_embedding),
+                distance_measure=DistanceMeasure.COSINE,
+                limit=limit,
+                distance_threshold=0.35
+            )
+        )
+        
+        for doc in query.stream():
+            data = doc.to_dict()
+            # 임베딩 데이터는 결과에서 제외
+            data.pop("embedding", None)
+            
+            results.append({
+                "id": doc.id,
+                "source": collection_name,
+                **data
+            })
+            
+    return results
+
+def retrieve_relevant_docs_with_vector_search1(
+    uid: str,
+    query: str,
+    dateList: list[str],
+) -> Dict[str, List[Dict[str, Any]]]:
+    query_embedding = call_embed_api(query)
+
+    expenses = vector_search_user_collection1(
+        uid=uid,
+        collection_name="expenses",
+        query_embedding=query_embedding,
+        dateList = dateList,
+        limit=100
+    )
+
+    incomes = vector_search_user_collection1(
+        uid=uid,
+        collection_name="Incomes",
+        query_embedding=query_embedding,
+        dateList = dateList,
+        limit=100
+    )
+
+    histories = vector_search_user_collection1(
+        uid=uid,
+        collection_name="chat_history",
+        query_embedding=query_embedding,
+        dateList = dateList,
+        limit=5
+    )
+
+    return {
+        "expenses": expenses,
+        "incomes": incomes,
+        "histories": histories,
+    }
+
+def answer_question_vector1(uid: str, question: str) -> Dict[str, Any]:
+    # 사용자 질문의 날짜 관련 표현을 YYYY-MM or YYYY-MM-DD 형식으로 변환
+    transformed_query = transform_query(question)
+    time.sleep(0.5)
+
+    dateList = extract_year_months(transformed_query)
+    start_total = time.time()
+    start = time.time()
+    # 월별 요약본 로드
+    summaries = load_monthly_summaries(uid)
+    # 설정한 예산안 로드
+    budgets = load_budgets(uid)
+    # 데이터 로드 및 대화 내역 로드
+    retrieved = retrieve_relevant_docs_with_vector_search(
+        uid=uid,
+        query=transformed_query
+        dateList = dateList
+    )
+    expenses = retrieved["expenses"]
+    incomes = retrieved["incomes"]
+    histories = retrieved["histories"]
+
+    # 데이터 추출
+    summaries, budgets = retrieve_relevant_docs_vector(transformed_query, summaries, budgets)
+    retrieval_elapsed = time.time() - start
+    print(f"데이터 로드 및 추출: {retrieval_elapsed}")
+
+    # 프롬프트 생성
+    prompt = build_prompt(transformed_query, summaries, budgets, expenses, incomes, histories)
+
+    gen_start = time.time()
+    # api 호출
+    answer = ""#call_gemini(prompt)
+    generation_elapsed = time.time() - gen_start
+    print(f"답변 생성: {generation_elapsed}")
+    total_elapsed = time.time() - start_total
+    print(f"총 지연: {total_elapsed}")
+
+    # 답변 반환
+    docs = []
+    docs.extend(summaries)
+    docs.extend(budgets)
+    docs.extend(expenses)
+    docs.extend(incomes)
+    docs.extend(histories)
+
+    return {
+        "answer": answer,
+        "references": [doc["id"] for doc in docs],
+        "retrieval_seconds": round(retrieval_elapsed, 3),
+        "generation_seconds": round(generation_elapsed, 3),
+        "total_seconds": round(total_elapsed, 3),
+    }

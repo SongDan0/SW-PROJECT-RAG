@@ -1000,7 +1000,7 @@ def answer_question_vector1(uid: str, question: str) -> Dict[str, Any]:
     # 설정한 예산안 로드
     budgets = load_budgets(uid)
     # 데이터 로드 및 대화 내역 로드
-    retrieved = retrieve_relevant_docs_with_vector_search(
+    retrieved = retrieve_relevant_docs_with_vector_search1(
         uid=uid,
         query=transformed_query,
         dateList = dateList

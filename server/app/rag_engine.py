@@ -887,7 +887,7 @@ def answer_question(uid: str, question: str) -> Dict[str, Any]:
     time.sleep(1)
 
     print("------")
-    answer_question_vector1
+    answer_question_vector1(uid, question)
     
     start = time.time()
     # 대화 내용 저장
@@ -1000,7 +1000,7 @@ def answer_question_vector1(uid: str, question: str) -> Dict[str, Any]:
     # 데이터 로드 및 대화 내역 로드
     retrieved = retrieve_relevant_docs_with_vector_search(
         uid=uid,
-        query=transformed_query
+        query=transformed_query,
         dateList = dateList
     )
     expenses = retrieved["expenses"]

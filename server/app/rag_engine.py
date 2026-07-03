@@ -613,7 +613,7 @@ def answer_question_custom(uid: str, question: str) -> Dict[str, Any]:
 
     gen_start = time.time()
     # api 호출
-    answer = call_gemini(prompt)
+    answer = ""#call_gemini(prompt)
     generation_elapsed = time.time() - gen_start
     print(f"답변 생성: {generation_elapsed}")
     total_elapsed = time.time() - start_total
@@ -665,7 +665,7 @@ def answer_question_vector(uid: str, question: str) -> Dict[str, Any]:
 
     gen_start = time.time()
     # api 호출
-    answer = call_gemini(prompt)
+    answer = ""#call_gemini(prompt)
     generation_elapsed = time.time() - gen_start
     print(f"답변 생성: {generation_elapsed}")
     total_elapsed = time.time() - start_total
@@ -783,7 +783,7 @@ def answer_question_keyword(uid: str, question: str) -> Dict[str, Any]:
 
     gen_start = time.time()
     # api 호출
-    answer = call_gemini(prompt)
+    answer = ""#call_gemini(prompt)
     generation_elapsed = time.time() - gen_start
     print(f"답변 생성: {generation_elapsed}")
     total_elapsed = time.time() - start_total
@@ -831,7 +831,7 @@ def answer_question_all(uid: str, question: str) -> Dict[str, Any]:
 
     gen_start = time.time()
     # api 호출
-    answer = call_gemini(prompt)
+    answer = ""#call_gemini(prompt)
     generation_elapsed = time.time() - gen_start
     print(f"답변 생성: {generation_elapsed}")
     total_elapsed = time.time() - start_total

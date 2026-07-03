@@ -910,41 +910,43 @@ def vector_search_user_collection1(
     dateList: list[str],
     limit: int = 5
 ) -> List[Dict[str, Any]]:
-    
-    collection_ref = db.collection("users").document(uid).collection(collection_name)
-    results = []
+    if dateList:
+        collection_ref = db.collection("users").document(uid).collection(collection_name)
+        results = []
 
-    # 각 날짜 범위별로 쿼리 수행
-    for date in dateList:
-        start_date = f"{date}-01"
-        end_date = f"{date}-32"
-        
-        # 1차: 날짜 범위로 필터링 후 find_nearest를 연결하여 벡터 검색 수행
-        # 주의: Firestore에서 날짜 범위 쿼리(where)와 벡터 쿼리(find_nearest)를 
-        # 결합하려면 적절한 인덱스가 설정되어 있어야 합니다.
-        query = (
-            collection_ref
-            .where("date", ">=", start_date)
-            .where("date", "<", end_date)
-            .find_nearest(
-                vector_field="embedding",
-                query_vector=Vector(query_embedding),
-                distance_measure=DistanceMeasure.COSINE,
-                limit=limit,
-                distance_threshold=0.35
+        for date in dateList:
+            start_date = f"{date}-01"
+            end_date = f"{date}-32"
+            query = (
+                collection_ref
+                .where("date", ">=", start_date)
+                .where("date", "<", end_date)
+                .find_nearest(
+                    vector_field="embedding",
+                    query_vector=Vector(query_embedding),
+                    distance_measure=DistanceMeasure.COSINE,
+                    limit=limit,
+                    distance_threshold=0.35
+                )
             )
-        )
         
-        for doc in query.stream():
-            data = doc.to_dict()
-            # 임베딩 데이터는 결과에서 제외
-            data.pop("embedding", None)
+            for doc in query.stream():
+                data = doc.to_dict()
+                # 임베딩 데이터는 결과에서 제외
+                data.pop("embedding", None)
             
-            results.append({
-                "id": doc.id,
-                "source": collection_name,
-                **data
-            })
+                results.append({
+                    "id": doc.id,
+                    "source": collection_name,
+                    **data
+                })
+    else:
+        results = vector_search_user_collection(
+            uid = uid,
+            collection_name = collection_name,
+            query_embedding = query_embedding,
+            limit = limit
+        )
             
     return results
 
